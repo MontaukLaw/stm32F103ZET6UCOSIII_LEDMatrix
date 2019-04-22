@@ -17,7 +17,13 @@
 #define LED0 PCout(13)// PC13
 #define LED1 PEout(5)// PE5	
 
+
+#define LED_BLINK_INTERVAL_SEC  1
+
+
 void LED_Init(void);//≥ı ºªØ
 
-		 				    
+void ledOff(u8 ledNumber);
+void ledOn(u8 ledNumber);
+
 #endif

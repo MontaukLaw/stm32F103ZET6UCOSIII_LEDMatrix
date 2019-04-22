@@ -22,6 +22,15 @@
 #define TX_MAX_LENGTH      20   //usar2 send bytes
 //#define CMD_BUFFER_LEN 200
 
+#define  TRANS_NONE  0
+#define TRANS_HALFSTART  1
+#define TRANS_SENDING 2
+#define TRANS_READYEND 3
+#define TRANS_END 4
+
+
+
+
 extern u8  USART_RX_BUF[USART_REC_LEN]; //接收缓冲,最大USART_REC_LEN个字节.末字节为换行符 
 extern u16 USART_RX_STA;         		//接收状态标记	
 //如果想串口中断接收，请不要注释以下宏定义

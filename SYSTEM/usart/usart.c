@@ -191,7 +191,61 @@ void uart_init(u32 bound){
 
 }
 
-void USART1_IRQHandler(void)                	//串口1中断服务程序
+u8 transFlag = TRANS_NONE;
+u8 usartRecieveCounter = 0;
+//重写一下串口中断
+void USART1_IRQHandler(void){
+	u8 Res;
+#ifdef SYSTEM_SUPPORT_OS	 	
+	OSIntEnter();    
+#endif
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET){  //接收中断(接收到的数据必须是0xFE 0xFE结尾)
+        Res = USART_ReceiveData(USART1);//(USART1->DR);	//读取接收到的数据   
+       
+        //如果接收到的是0xFF
+        if(Res == 0xFF){
+            switch(transFlag){
+                case TRANS_NONE:
+                    usartRecieveCounter = 0;
+                    transFlag = TRANS_HALFSTART;
+                    break;
+                case TRANS_HALFSTART:
+                    transFlag = TRANS_SENDING;
+                    break;
+                //case TRANS_SENDING:
+                    //transFlag = TRANS_READYEND;
+                    //break;                                                    
+            }
+        //如果收到了0xFE            
+        }else if(Res == 0xFE){
+            switch (transFlag){
+                case TRANS_SENDING:
+                    transFlag = TRANS_READYEND;
+                    break;
+                case TRANS_READYEND:
+                    transFlag = TRANS_END;
+                    sendComAnalyzeEvent();
+                    break;
+                default:
+                   //如果校验数正好是254, 也需要去掉误判.
+                   transFlag = TRANS_SENDING; 
+            }
+                   
+        }else{
+            //如果收到的非0xFF0xFE, 即刻将状态机扳到发送中的状态.
+            transFlag = TRANS_SENDING;
+           
+        }
+        USART_RX_BUF[usartRecieveCounter] = Res;  
+        usartRecieveCounter++;   
+        
+    }
+#ifdef SYSTEM_SUPPORT_OS	 
+	OSIntExit();  											 
+#endif
+}
+
+void USART1_IRQHandler_bak(void)                	//串口1中断服务程序
 {
 	u8 Res;
 
@@ -215,6 +269,7 @@ void USART1_IRQHandler(void)                	//串口1中断服务程序
             }
 			else //还没收到0X0D
 			{	
+                //
 				if(Res==0x0d)USART_RX_STA|=0x4000;
 				else
 				{

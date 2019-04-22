@@ -121,7 +121,7 @@ void TASK5_task(void *p_arg);
 
 //---------------------------------------------------------------------
 //任务优先级
-#define FLAGSPROCESS_TASK_PRIO	10
+#define FLAGSPROCESS_TASK_PRIO	5
 //任务堆栈大小	
 #define FLAGSPROCESS_STK_SIZE 	128
 //任务控制块
@@ -135,7 +135,7 @@ void flagsprocess_task(void *p_arg);
 
 //---------------------------------------------------------------------
 //任务优先级
-#define FLAGSPROCESS2_TASK_PRIO	10
+#define FLAGSPROCESS2_TASK_PRIO	6
 //任务堆栈大小	
 #define FLAGSPROCESS2_STK_SIZE 	128
 //任务控制块
@@ -162,7 +162,7 @@ int main(void)
 	delay_init();       //延时初始化
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //中断分组配置
 	uart_init(9600);    //串口波特率设置
-    uart2_init(115200);  //for debug
+    uart2_init(9600);  //for debug
 	LED_Init();         //LED初始化
 
 	OSInit(&err);		//初始化UCOSIII
@@ -354,13 +354,25 @@ void TASK2_task(void *p_arg)
     }
 }
 
-//进票口LED任务任务
+extern u8 transFlag;
+extern u8 blinkGridNumber;
+//LED闪烁任务
 void TASK3_task(void *p_arg)
 {
 	OS_ERR err;
 	p_arg = p_arg;    
     DebugOutput("start task 3\r\n");
     while(1){
+        
+        if(blinkGridNumber){
+            LED0 = 1;
+            ledOff(blinkGridNumber);
+            OSTimeDlyHMSM(0,0,LED_BLINK_INTERVAL_SEC,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1000ms
+            LED0 = 0;
+            ledOn(blinkGridNumber);
+            OSTimeDlyHMSM(0,0,LED_BLINK_INTERVAL_SEC,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1000ms
+        }
+        
         if(feederLed){
             DebugOutput("task 3\r\n");
             LED0 = 0;
@@ -368,8 +380,10 @@ void TASK3_task(void *p_arg)
             LED0 = 1;
             OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1000ms
         }
+        //OSTimeDlyHMSM(0,0,1,0,OS_OPT_TIME_HMSM_STRICT,&err); //延时1000ms
     }
 }
+
 
 void TASK4_task(void *p_arg)
 {
@@ -411,7 +425,9 @@ void TASK5_task(void *p_arg)
     OS_FLAGS flags_num;
 	p_arg = p_arg; 
     while(1){
-        OSTimeDlyHMSM(0,0,1,000,OS_OPT_TIME_HMSM_STRICT,&err); //延时500ms
+        DebugOutput("TASK5 running \r\n");
+        OSTimeDlyHMSM(0,0,3,000,OS_OPT_TIME_HMSM_STRICT,&err); //延时500ms
+        //sendComAnalyzeEvent();
     }
     while(0){
         counter++;
@@ -449,7 +465,7 @@ void flagsprocess_task(void *p_arg)
     }
 	while(1)
 	{
-		//等待事件标志组
+		//等待事件标志组 ANA
 		OSFlagPend((OS_FLAG_GRP*)&EventFlags,
 				   (OS_FLAGS	)COM_ANA_FLAG,
 		     	   (OS_TICK     )0,
